@@ -1,0 +1,89 @@
+name: Publish Wiki
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'wiki/**'
+      - '.github/workflows/publish-wiki.yml'
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  publish-wiki:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Clone wiki repository
+        run: |
+          # Clone wiki repo (create directory if it doesn't exist)
+          if [ ! -d "wiki-repo" ]; then
+            git clone https://github.com/JohnVonDrashek/benedict-bullethell-patterns.wiki.git wiki-repo || {
+              echo "Wiki repository might be empty, initializing..."
+              mkdir -p wiki-repo
+              cd wiki-repo
+              git init
+              git remote add origin https://github.com/JohnVonDrashek/benedict-bullethell-patterns.wiki.git
+              cd ..
+            }
+          else
+            cd wiki-repo
+            git pull origin main || git pull origin master || true
+            cd ..
+          fi
+
+      - name: Sync wiki files
+        run: |
+          # Copy all wiki files to the wiki repository
+          rsync -av --delete --exclude='.git' wiki/ wiki-repo/
+          
+          # Ensure Home.md exists (required for GitHub wikis)
+          if [ ! -f "wiki-repo/Home.md" ]; then
+            echo "Warning: Home.md not found in wiki directory"
+          fi
+
+      - name: Commit and push to wiki
+        env:
+          # Use PAT if available, otherwise fall back to GITHUB_TOKEN
+          # Note: GITHUB_TOKEN may not have wiki write access - use GH_PAT secret if needed
+          WIKI_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          cd wiki-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Check if this is a new repo (no remote or no commits)
+          if ! git rev-parse --verify HEAD >/dev/null 2>&1; then
+            echo "Initializing new wiki repository"
+            git checkout -b main 2>/dev/null || git checkout -b master 2>/dev/null || true
+          fi
+          
+          # Check if there are changes
+          if [ -n "$(git status --porcelain)" ]; then
+            git add .
+            git commit -m "Automated wiki update from main branch [skip ci]"
+            
+            # Try pushing to main, fall back to master
+            if git push https://x-access-token:${WIKI_TOKEN}@github.com/JohnVonDrashek/benedict-bullethell-patterns.wiki.git HEAD:main 2>&1; then
+              echo "Pushed to main branch"
+            elif git push https://x-access-token:${WIKI_TOKEN}@github.com/JohnVonDrashek/benedict-bullethell-patterns.wiki.git HEAD:master 2>&1; then
+              echo "Pushed to master branch"
+            elif git push -u https://x-access-token:${WIKI_TOKEN}@github.com/JohnVonDrashek/benedict-bullethell-patterns.wiki.git HEAD:main 2>&1; then
+              echo "Pushed to main branch (new branch)"
+            else
+              echo "ERROR: Failed to push to wiki repository"
+              echo "This might be due to insufficient permissions."
+              echo "GITHUB_TOKEN may not have wiki write access."
+              echo "Please set up a GH_PAT secret with 'repo' scope."
+              exit 1
+            fi
+          else
+            echo "No changes to commit"
+          fi
+
