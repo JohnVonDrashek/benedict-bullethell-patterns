@@ -1,5 +1,9 @@
 # BenedictBulletHell.Patterns
 
+<div align="center">
+  <img src="BenedictBulletHell.Patterns/icon.png" alt="BenedictBulletHell.Patterns" width="128" height="128">
+</div>
+
 A framework-agnostic C# library for defining and executing bullet hell pattern generation. Create complex bullet patterns with a clean, composable API while remaining completely decoupled from rendering, physics, and game engine concerns.
 
 ## Features
