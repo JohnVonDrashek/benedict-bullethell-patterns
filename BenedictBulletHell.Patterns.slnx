@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="BenedictBulletHell.Patterns.Tests/BenedictBulletHell.Patterns.Tests.csproj" />
+  <Project Path="BenedictBulletHell.Patterns/BenedictBulletHell.Patterns.csproj" />
+</Solution>
