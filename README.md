@@ -1,5 +1,9 @@
 # BenedictBulletHell.Patterns
 
+![NuGet](https://img.shields.io/nuget/v/BenedictBulletHell.Patterns?logo=nuget)
+![License](https://img.shields.io/github/license/JohnVonDrashek/benedict-bullethell-patterns)
+![.NET Standard](https://img.shields.io/badge/.NET%20Standard-2.1-blue)
+
 <div align="center">
   <img src="BenedictBulletHell.Patterns/icon.png" alt="BenedictBulletHell.Patterns" width="128" height="128">
 </div>
@@ -16,8 +20,18 @@ A framework-agnostic C# library for defining and executing bullet hell pattern g
 
 ## Installation
 
+Install from [NuGet](https://www.nuget.org/packages/BenedictBulletHell.Patterns):
+
 ```bash
 dotnet add package BenedictBulletHell.Patterns
+```
+
+Or add to your `.csproj`:
+
+```xml
+<ItemGroup>
+  <PackageReference Include="BenedictBulletHell.Patterns" Version="1.0.0" />
+</ItemGroup>
 ```
 
 ## Quick Start
@@ -317,6 +331,13 @@ The library only defines **when** and **how** bullets should spawn.
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
+
+## Resources
+
+- [NuGet Package](https://www.nuget.org/packages/BenedictBulletHell.Patterns)
+- [GitHub Repository](https://github.com/JohnVonDrashek/benedict-bullethell-patterns)
+- [Wiki Documentation](https://github.com/JohnVonDrashek/benedict-bullethell-patterns/wiki)
+- [Design Document](DESIGN.md)
 
 ## Contributing
 
