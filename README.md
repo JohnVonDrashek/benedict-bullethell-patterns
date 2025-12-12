@@ -316,7 +316,7 @@ The library only defines **when** and **how** bullets should spawn.
 
 ## License
 
-[To be determined - MIT recommended]
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Contributing
 
