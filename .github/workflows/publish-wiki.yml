@@ -34,7 +34,7 @@ jobs:
             }
           else
             cd wiki-repo
-            git pull origin main || git pull origin master || true
+            git pull origin master || git pull origin main || true
             cd ..
           fi
 
@@ -61,7 +61,7 @@ jobs:
           # Check if this is a new repo (no remote or no commits)
           if ! git rev-parse --verify HEAD >/dev/null 2>&1; then
             echo "Initializing new wiki repository"
-            git checkout -b main 2>/dev/null || git checkout -b master 2>/dev/null || true
+            git checkout -b master 2>/dev/null || git checkout -b main 2>/dev/null || true
           fi
           
           # Check if there are changes
@@ -69,13 +69,13 @@ jobs:
             git add .
             git commit -m "Automated wiki update from main branch [skip ci]"
             
-            # Try pushing to main, fall back to master
-            if git push https://x-access-token:${WIKI_TOKEN}@github.com/JohnVonDrashek/benedict-bullethell-patterns.wiki.git HEAD:main 2>&1; then
-              echo "Pushed to main branch"
-            elif git push https://x-access-token:${WIKI_TOKEN}@github.com/JohnVonDrashek/benedict-bullethell-patterns.wiki.git HEAD:master 2>&1; then
+            # Try pushing to master first (GitHub wikis typically use master), fall back to main
+            if git push https://x-access-token:${WIKI_TOKEN}@github.com/JohnVonDrashek/benedict-bullethell-patterns.wiki.git HEAD:master 2>&1; then
               echo "Pushed to master branch"
-            elif git push -u https://x-access-token:${WIKI_TOKEN}@github.com/JohnVonDrashek/benedict-bullethell-patterns.wiki.git HEAD:main 2>&1; then
-              echo "Pushed to main branch (new branch)"
+            elif git push https://x-access-token:${WIKI_TOKEN}@github.com/JohnVonDrashek/benedict-bullethell-patterns.wiki.git HEAD:main 2>&1; then
+              echo "Pushed to main branch"
+            elif git push -u https://x-access-token:${WIKI_TOKEN}@github.com/JohnVonDrashek/benedict-bullethell-patterns.wiki.git HEAD:master 2>&1; then
+              echo "Pushed to master branch (new branch)"
             else
               echo "ERROR: Failed to push to wiki repository"
               echo "This might be due to insufficient permissions."
