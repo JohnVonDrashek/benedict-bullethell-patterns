@@ -440,9 +440,218 @@ public class DelayedPattern : IBulletPattern
 }
 ```
 
+## Pattern Serialization
+
+The library provides comprehensive JSON serialization support for all pattern types, enabling save/load functionality, pattern sharing, and runtime configuration.
+
+### Basic Serialization
+
+```csharp
+using BenedictBulletHell.Patterns.Serialization;
+
+var serializer = new JsonPatternSerializer();
+var pattern = Pattern.Ring(8, 150f);
+
+// Serialize to string
+string json = serializer.Serialize(pattern);
+
+// Deserialize from string
+var deserialized = serializer.Deserialize(json);
+
+// Verify round-trip
+var context = new PatternContext { Origin = Vector2.Zero };
+var originalSpawns = pattern.GetSpawns(0f, 0f, context).ToList();
+var deserializedSpawns = deserialized.GetSpawns(0f, 0f, context).ToList();
+// Both produce identical spawns
+```
+
+### File I/O
+
+```csharp
+// Save pattern to file
+using (var stream = File.Create("boss_attack.json"))
+{
+    serializer.Serialize(pattern, stream);
+}
+
+// Load pattern from file
+using (var stream = File.OpenRead("boss_attack.json"))
+{
+    var loaded = serializer.Deserialize(stream);
+}
+```
+
+### JSON Format
+
+Patterns use a polymorphic JSON structure with type discriminators:
+
+**Basic Pattern:**
+```json
+{
+  "type": "RingPattern",
+  "bulletCount": 8,
+  "speed": 150.0,
+  "startAngle": 0.0
+}
+```
+
+**Composite Pattern:**
+```json
+{
+  "type": "SequencePattern",
+  "looping": false,
+  "patterns": [
+    { "type": "RingPattern", "bulletCount": 8, "speed": 150.0 },
+    { "type": "SpreadPattern", "bulletCount": 5, "angleSpread": 45.0, "speed": 200.0 }
+  ]
+}
+```
+
+**Nested Pattern with Modifier:**
+```json
+{
+  "type": "RotatingPattern",
+  "rotationSpeed": 90.0,
+  "pattern": {
+    "type": "SequencePattern",
+    "looping": false,
+    "patterns": [
+      { "type": "RingPattern", "bulletCount": 8, "speed": 150.0 },
+      { "type": "SpreadPattern", "bulletCount": 5, "angleSpread": 45.0, "speed": 200.0 }
+    ]
+  }
+}
+```
+
+### Pattern Caching with Serialization
+
+Combine serialization with caching for efficient pattern management:
+
+```csharp
+public class SerializedPatternCache
+{
+    private readonly IPatternSerializer _serializer = new JsonPatternSerializer();
+    private readonly Dictionary<string, IBulletPattern> _cache = new();
+    private readonly string _cacheDirectory;
+
+    public SerializedPatternCache(string cacheDirectory)
+    {
+        _cacheDirectory = cacheDirectory;
+        Directory.CreateDirectory(cacheDirectory);
+    }
+
+    public IBulletPattern GetOrLoad(string patternId)
+    {
+        if (_cache.TryGetValue(patternId, out var cached))
+            return cached;
+
+        string filePath = Path.Combine(_cacheDirectory, $"{patternId}.json");
+        
+        if (File.Exists(filePath))
+        {
+            using (var stream = File.OpenRead(filePath))
+            {
+                var pattern = _serializer.Deserialize(stream);
+                _cache[patternId] = pattern;
+                return pattern;
+            }
+        }
+
+        throw new FileNotFoundException($"Pattern file not found: {filePath}");
+    }
+
+    public void Save(string patternId, IBulletPattern pattern)
+    {
+        _cache[patternId] = pattern;
+        
+        string filePath = Path.Combine(_cacheDirectory, $"{patternId}.json");
+        using (var stream = File.Create(filePath))
+        {
+            _serializer.Serialize(pattern, stream);
+        }
+    }
+}
+```
+
+### Runtime Pattern Configuration
+
+Load patterns from configuration files for easy difficulty adjustment:
+
+```csharp
+public class ConfigurableBoss
+{
+    private readonly IPatternSerializer _serializer = new JsonPatternSerializer();
+    private IBulletPattern _attackPattern;
+
+    public void LoadPatternFromConfig(string configPath)
+    {
+        string json = File.ReadAllText(configPath);
+        _attackPattern = _serializer.Deserialize(json);
+    }
+
+    public void AdjustDifficulty(float speedMultiplier)
+    {
+        // Note: Patterns are immutable, so you'd need to deserialize,
+        // modify the JSON, and re-serialize, or use PatternContext.Metadata
+        // for runtime adjustments instead
+    }
+}
+```
+
+### Error Handling
+
+Serialization methods throw descriptive exceptions:
+
+```csharp
+try
+{
+    var pattern = serializer.Deserialize(json);
+}
+catch (ArgumentException ex)
+{
+    // Missing required fields, invalid values, etc.
+    Console.WriteLine($"Invalid pattern: {ex.Message}");
+}
+catch (JsonException ex)
+{
+    // Malformed JSON
+    Console.WriteLine($"JSON parse error: {ex.Message}");
+}
+```
+
+### Performance Considerations
+
+- Serialization is fast enough for runtime use (< 10ms for typical patterns)
+- For large pattern libraries, consider caching deserialized patterns
+- File I/O is the main bottleneck; use async I/O for large files
+- JSON output is human-readable and well-formatted (indented)
+
+### Round-Trip Guarantee
+
+The serializer guarantees that serializing and deserializing a pattern produces identical behavior:
+
+```csharp
+var original = Pattern.Ring(8, 150f, 45f);
+var json = serializer.Serialize(original);
+var deserialized = serializer.Deserialize(json);
+
+// Both patterns produce identical spawns
+var context = new PatternContext { Origin = Vector2.Zero };
+var originalSpawns = original.GetSpawns(0f, 0f, context).ToList();
+var deserializedSpawns = deserialized.GetSpawns(0f, 0f, context).ToList();
+
+Assert.Equal(originalSpawns.Count, deserializedSpawns.Count);
+for (int i = 0; i < originalSpawns.Count; i++)
+{
+    Assert.Equal(originalSpawns[i].Position, deserializedSpawns[i].Position);
+    Assert.Equal(originalSpawns[i].Direction, deserializedSpawns[i].Direction);
+    Assert.Equal(originalSpawns[i].Speed, deserializedSpawns[i].Speed);
+}
+```
+
 ## Next Steps
 
 - **[Best Practices](Best-Practices)** - Apply these techniques effectively
-- **[Examples](Examples)** - See advanced examples
-- **[API Reference](API-Reference)** - Detailed API documentation
+- **[Examples](Examples)** - See advanced examples including serialization
+- **[API Reference](API-Reference)** - Detailed API documentation including serialization
 

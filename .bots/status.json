@@ -1,0 +1,21 @@
+{
+  "version": "1.0",
+  "lastUpdated": "2025-12-13T02:38:44Z",
+  "nextFeatureId": 2,
+  "features": [
+    {
+      "id": "FEATURE-001",
+      "title": "Pattern Serialization and Deserialization System",
+      "status": "complete",
+      "priority": "high",
+      "complexity": "complex",
+      "created": "2025-01-27T00:00:00Z",
+      "updated": "2025-12-13T02:38:44Z",
+      "featureFile": ".bots/features/FEATURE-001-pattern-serialization.md",
+      "testFile": "BenedictBulletHell.Patterns.Tests/PatternSerializationTests.cs",
+      "dependencies": [],
+      "notes": []
+    }
+  ]
+}
+

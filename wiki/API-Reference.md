@@ -344,12 +344,108 @@ public sealed class RotatingPattern : IBulletPattern
 
 ---
 
+## Serialization
+
+### IPatternSerializer
+
+Interface for serializing and deserializing bullet patterns to/from JSON.
+
+```csharp
+public interface IPatternSerializer
+{
+    string Serialize(IBulletPattern pattern);
+    IBulletPattern Deserialize(string json);
+    void Serialize(IBulletPattern pattern, Stream stream);
+    IBulletPattern Deserialize(Stream stream);
+}
+```
+
+**Methods:**
+- `Serialize(IBulletPattern)` - Serializes a pattern to a JSON string
+- `Deserialize(string)` - Deserializes a pattern from a JSON string
+- `Serialize(IBulletPattern, Stream)` - Serializes a pattern to a stream
+- `Deserialize(Stream)` - Deserializes a pattern from a stream
+
+**Exceptions:**
+- `ArgumentNullException` - When pattern or stream is null
+- `ArgumentException` - When JSON is invalid or missing required fields
+- `JsonException` - When JSON cannot be parsed
+
+### JsonPatternSerializer
+
+JSON implementation of `IPatternSerializer` using System.Text.Json.
+
+```csharp
+public sealed class JsonPatternSerializer : IPatternSerializer
+```
+
+**Usage:**
+```csharp
+using BenedictBulletHell.Patterns.Serialization;
+
+var serializer = new JsonPatternSerializer();
+var pattern = Pattern.Ring(8, 150f);
+
+// Serialize to string
+string json = serializer.Serialize(pattern);
+
+// Deserialize from string
+var deserialized = serializer.Deserialize(json);
+
+// Serialize to file
+using (var stream = File.Create("pattern.json"))
+{
+    serializer.Serialize(pattern, stream);
+}
+
+// Deserialize from file
+using (var stream = File.OpenRead("pattern.json"))
+{
+    var loaded = serializer.Deserialize(stream);
+}
+```
+
+**JSON Format:**
+
+Patterns are serialized with a `type` discriminator and pattern-specific properties:
+
+```json
+{
+  "type": "RingPattern",
+  "bulletCount": 8,
+  "speed": 150.0,
+  "startAngle": 0.0
+}
+```
+
+Composite patterns include nested patterns:
+
+```json
+{
+  "type": "SequencePattern",
+  "looping": false,
+  "patterns": [
+    { "type": "RingPattern", "bulletCount": 8, "speed": 150.0 },
+    { "type": "SpreadPattern", "bulletCount": 5, "angleSpread": 45.0, "speed": 200.0 }
+  ]
+}
+```
+
+**Supported Pattern Types:**
+- Basic: `RingPattern`, `SingleShotPattern`, `BurstPattern`, `SpreadPattern`
+- Advanced: `AimedPattern`, `SpiralPattern`, `WavePattern`
+- Composite: `SequencePattern`, `ParallelPattern`, `RepeatPattern`, `LoopPattern`
+- Modifiers: `RotatingPattern`
+
+---
+
 ## Exceptions
 
 The library may throw the following exceptions:
 
 - **`ArgumentNullException`** - When required parameters are null
-- **`ArgumentException`** - When parameters are invalid (e.g., negative counts, speeds)
+- **`ArgumentException`** - When parameters are invalid (e.g., negative counts, speeds) or JSON is malformed
+- **`JsonException`** - When JSON cannot be parsed during deserialization
 
 ---
 
@@ -362,6 +458,7 @@ The library may throw the following exceptions:
 - `BenedictBulletHell.Patterns.Patterns.Advanced` - Advanced pattern implementations
 - `BenedictBulletHell.Patterns.Patterns.Composite` - Composite pattern implementations
 - `BenedictBulletHell.Patterns.Patterns.Modifiers` - Modifier pattern implementations
+- `BenedictBulletHell.Patterns.Serialization` - Pattern serialization interfaces and implementations
 
 ---
 

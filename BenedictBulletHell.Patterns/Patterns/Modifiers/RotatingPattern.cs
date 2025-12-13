@@ -21,7 +21,7 @@ namespace BenedictBulletHell.Patterns.Patterns.Modifiers
         /// <summary>
         /// Rotation speed in degrees per second.
         /// </summary>
-        public float RotationSpeed { get; }
+        public float RotationSpeed => _rotationSpeed;
 
         /// <summary>
         /// Duration matches the base pattern.
